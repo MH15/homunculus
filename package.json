@@ -1,0 +1,21 @@
+{
+  "name": "homunculus",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@effect/ai": "^0.26.0",
+    "@effect/ai-anthropic": "^0.16.0",
+    "@effect/cli": "^0.69.0",
+    "@effect/language-service": "^0.35.2",
+    "@effect/platform": "^0.90.3",
+    "@effect/platform-bun": "^0.79.0",
+    "@effect/platform-node": "^0.96.0",
+    "effect": "^3.17.7"
+  }
+}
