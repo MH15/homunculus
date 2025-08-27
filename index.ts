@@ -9,8 +9,9 @@ import {
   NodeHttpClient,
   NodeRuntime,
 } from "@effect/platform-node";
-import { Config, Console, Effect, Layer, Stream } from "effect";
-import { RealToolkitLayer, toolkit } from "./src/tools/index.ts";
+import { Config, Console, Effect, Layer, Option, Stream } from "effect";
+import { RealToolkitLayer } from "./src/tools/index.ts";
+import { retryChat } from "./src/util/stream.ts";
 
 const main = Effect.gen(function* () {
   const chat = yield* AiChat.fromPrompt({
@@ -19,44 +20,33 @@ const main = Effect.gen(function* () {
 Homunculus lives in the terminal.
     `,
   });
+  const terminal = yield* Terminal.Terminal;
 
   while (true) {
     const input = yield* Prompt.text({ message: "Homunulus want what?" });
-    // let response = yield* chat.generateText({
-    //   prompt: input,
-    //   toolkit: toolkit,
-    // });
 
-    const stream = chat.streamText({
-      prompt: input,
-      toolkit: toolkit,
-    });
+    const stream = yield* retryChat(chat, input);
 
-    let response: ReturnType<typeof chat.generateText> | null = null;
-
-    const terminal = yield* Terminal.Terminal;
-
-    yield* stream.pipe(
-      Stream.runForEach((chunk) =>
-        Effect.gen(function* () {
-          yield* terminal.display(chunk.text);
-          response = chunk;
-        })
-      )
+    const b = yield* stream.pipe(
+      Stream.tap((chunk) => terminal.display(chunk.text)),
+      Stream.runLast
     );
+
+    let unwrapped = Option.getOrThrow(b);
+
+    console.log("FINAL", unwrapped);
+
     yield* terminal.display("\n");
 
-    // yield* Console.log(response.text);
-
     let turn = 0;
-
-    while (response.toolCalls.length > 0) {
+    while (unwrapped.toolCalls.length > 0) {
       yield* Console.log(`Turn ${turn}`);
-      response = yield* chat.generateText({
-        prompt: input,
-        toolkit: toolkit,
-      });
-      yield* Console.log(response.text);
+      const stream = yield* retryChat(chat, input);
+      const c = yield* stream.pipe(
+        Stream.tap((chunk) => terminal.display(chunk.text)),
+        Stream.runLast
+      );
+      unwrapped = Option.getOrThrow(c);
       turn++;
     }
   }
