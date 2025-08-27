@@ -11,9 +11,13 @@ import {
 } from "@effect/platform-node";
 import { Config, Console, Effect, Layer, Option } from "effect";
 import { RealToolkitLayer } from "./src/tools/index.ts";
+import { exportChatJson } from "./src/util/debugExporter.ts";
+import { isQuitException } from "./src/util/exceptions.ts";
 import { retryChat } from "./src/util/stream.ts";
 
 const main = Effect.gen(function* () {
+  const chatTimestamp = Date.now();
+
   const cwd = process.cwd();
 
   const chat = yield* AiChat.fromPrompt({
@@ -23,9 +27,12 @@ Homunculus lives in the terminal.
 The current location is at ${cwd}.
     `,
   });
+
   const terminal = yield* Terminal.Terminal;
 
+  // Outer loop.
   while (true) {
+    // Only main user input.
     const input = yield* Prompt.text({ message: "Homunulus want what?" });
 
     const chatAndStream = Effect.gen(function* () {
@@ -45,13 +52,10 @@ The current location is at ${cwd}.
 
       turn++;
     }
+
+    yield* exportChatJson(chatTimestamp, unwrapped);
   }
 });
-
-// const BunHttpCustomClient = HttpClient.make({
-//   platform: BunHttpClient,
-
-// const runnable = main.pipe(AnthropicClaude);
 
 const AnthropicLayer = AnthropicClient.layerConfig({
   apiKey: Config.redacted("ANTHROPIC_API_KEY"),
@@ -64,8 +68,14 @@ const ClaudeLayer = AnthropicLanguageModel.model(
 const AppLayer = Layer.mergeAll(
   NodeContext.layer,
   ClaudeLayer,
-  // FetchHttpClient.layer,
   RealToolkitLayer
 );
 
-main.pipe(Effect.provide(AppLayer), NodeRuntime.runMain);
+main.pipe(
+  Effect.catchAll((error) => {
+    if (isQuitException(error)) return Console.error("Goodbye!");
+    return Console.error("Unexpected error occurred:", error);
+  }),
+  Effect.provide(AppLayer),
+  NodeRuntime.runMain
+);

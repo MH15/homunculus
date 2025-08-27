@@ -1,12 +1,19 @@
 import { AiToolkit } from "@effect/ai";
+import { Prompt } from "@effect/cli";
 import { FileSystem, Path } from "@effect/platform";
 import { NodeContext } from "@effect/platform-node";
 import { Console, Effect, Layer } from "effect";
+import { ChooseOptionTool } from "./chooseOptionTool.ts";
 import { EditTool } from "./editTool.ts";
 import { ListTool } from "./listTool.ts";
 import { ReadTool } from "./readTool.ts";
 
-export const toolkit = AiToolkit.make(ListTool, ReadTool, EditTool);
+export const toolkit = AiToolkit.make(
+  ListTool,
+  ReadTool,
+  EditTool,
+  ChooseOptionTool
+);
 
 const StubToolkitLayer = toolkit.toLayer({
   list: ({ path }) =>
@@ -29,6 +36,13 @@ const StubToolkitLayer = toolkit.toLayer({
       yield* Console.log(`Edit(${path}, ${old_string}, ${new_string})`);
       return {
         message: "yeah I got it",
+      };
+    }),
+  chooseOption: ({ options }) =>
+    Effect.gen(function* () {
+      yield* Console.log(`ChooseOption(${options})`);
+      return {
+        selected: options[0] || "No option chosen.",
       };
     }),
 });
@@ -83,6 +97,22 @@ export const RealToolkitLayer = toolkit
             yield* Console.log(`Edit(${path}, ${old_string}, ${new_string})`);
             return {
               message: "yeah I got it",
+            };
+          }),
+        chooseOption: ({ options }) =>
+          Effect.gen(function* () {
+            const result = yield* Prompt.select({
+              message: "Choose an option",
+              choices: options.map((option) => ({
+                title: option,
+                value: option,
+              })),
+            }).pipe(
+              Effect.catchAll(() => Effect.succeed("No option chosen.")),
+              Effect.provide(NodeContext.layer) // Provide Terminal dependency required for Prompt library
+            );
+            return {
+              selected: result || "No option chosen.",
             };
           }),
       });
