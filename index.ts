@@ -13,10 +13,12 @@ import { exportChatJson } from "./src/util/debugExporter.ts";
 import { isQuitException } from "./src/util/exceptions.ts";
 import { retryChat } from "./src/util/stream.ts";
 
-const main = Effect.gen(function* () {
-  const chatTimestamp = Date.now();
+// NodeJS necessities we don't need to wrap in the Effect.
+const chatTimestamp = Date.now();
+const cwd = process.cwd();
 
-  const cwd = process.cwd();
+const main = Effect.gen(function* () {
+  const terminal = yield* Terminal.Terminal;
 
   const chat = yield* AiChat.fromPrompt({
     prompt: [],
@@ -26,11 +28,8 @@ The current location is at ${cwd}.
     `,
   });
 
-  const terminal = yield* Terminal.Terminal;
-
-  // Outer loop.
+  // Outer loop - each time this runs, we've no more tool calls to process.
   while (true) {
-    // Only main user input.
     const input = yield* Prompt.text({ message: "Homunulus want what?" });
 
     const chatAndStream = Effect.gen(function* () {
@@ -41,6 +40,8 @@ The current location is at ${cwd}.
     let unwrapped = yield* chatAndStream;
 
     yield* terminal.display("\n");
+
+    // clear the whole screen
 
     let turn = 0;
     while (unwrapped.toolCalls.length > 0) {
@@ -64,6 +65,7 @@ const ClaudeLayer = AnthropicLanguageModel.model(
   "claude-sonnet-4-20250514"
 ).pipe(Layer.provide(AnthropicLayer));
 
+// All the dependencies we need to provide to the main program.
 const AppLayer = Layer.mergeAll(
   NodeContext.layer,
   ClaudeLayer,
@@ -72,7 +74,9 @@ const AppLayer = Layer.mergeAll(
 
 main.pipe(
   Effect.catchAll((error) => {
+    // Catch Ctrl+C keys to gracefully shut down the application
     if (isQuitException(error)) return Console.error("Goodbye!");
+    // Handle all other errors less gracefully
     return Console.error("Unexpected error occurred:", error);
   }),
   Effect.provide(AppLayer),

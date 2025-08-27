@@ -21,6 +21,9 @@ export const retryChat = (chat: AiChat.AiChat.Service, prompt: string) =>
     const result = yield* stream.pipe(
       Stream.tap((chunk) => terminal.display(chunk.text)),
       Stream.runLast,
+      // Anthropic AiLanguageModel implementation throws an Effect.die when hitting a ratelimit, this isn't correct behavior,
+      // because sometimes you want to retry on ratelimit. Using Effect.catchAllDefect can let us soften the fatal errors
+      // to recoverable errors that we can retry based on the Schedule defined above.
       Effect.catchAllDefect((error) => {
         console.error("Fatal error occurred:", error);
         return Effect.fail(error);
