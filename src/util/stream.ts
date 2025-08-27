@@ -3,17 +3,6 @@ import { Terminal } from "@effect/platform";
 import { Console, Effect, Schedule, Stream } from "effect";
 import { toolkit } from "../tools/index.ts";
 
-export const logStringStream = <E, R>(stream: Stream.Stream<string, E, R>) => {
-  return Effect.gen(function* () {
-    const terminal = yield* Terminal.Terminal;
-    yield* Stream.runForEach(stream, (chunk) =>
-      Effect.gen(function* () {
-        yield* terminal.display(chunk);
-      })
-    );
-  });
-};
-
 // exponential backoff starting at 200ms and stopping after 5 retries
 const policy = Schedule.tapOutput(
   Schedule.intersect(Schedule.exponential("200 millis"), Schedule.recurs(5)),
