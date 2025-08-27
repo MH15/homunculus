@@ -77,19 +77,19 @@ export const RealToolkitLayer = toolkit
             const files: string[] = [];
             const directories: string[] = [];
             for (const name of entries) {
-              //       const fullPath = yield* pathService.isAbsolute(name)
-              //         ? name
-              //         : pathService.join(path, name);
-              //       const stat = yield* fs.stat(fullPath);
-              //       if (stat.type === "File") {
-              //         files.push(fullPath);
-              //       } else if (stat.type === "Directory") {
-              //         directories.push(fullPath);
-              //       }
+              // const fullPath = yield* pathService.isAbsolute(name)
+              //   ? name
+              //   : pathService.join(path, name);
+              const stat = yield* fs.stat(name);
+              if (stat.type === "File") {
+                files.push(name);
+              } else if (stat.type === "Directory") {
+                directories.push(name);
+              }
             }
             return {
-              files: ["yeet.ts"],
-              directories: [],
+              files,
+              directories,
             };
           }).pipe(
             Effect.catchAll((error) =>

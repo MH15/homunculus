@@ -9,7 +9,7 @@ import {
   NodeHttpClient,
   NodeRuntime,
 } from "@effect/platform-node";
-import { Config, Console, Effect, Layer, Option, Stream } from "effect";
+import { Config, Console, Effect, Layer, Option } from "effect";
 import { RealToolkitLayer } from "./src/tools/index.ts";
 import { retryChat } from "./src/util/stream.ts";
 
@@ -25,28 +25,21 @@ Homunculus lives in the terminal.
   while (true) {
     const input = yield* Prompt.text({ message: "Homunulus want what?" });
 
-    const stream = yield* retryChat(chat, input);
+    const chatAndStream = Effect.gen(function* () {
+      const stream = yield* retryChat(chat, input);
+      return Option.getOrThrow(stream);
+    });
 
-    const b = yield* stream.pipe(
-      Stream.tap((chunk) => terminal.display(chunk.text)),
-      Stream.runLast
-    );
-
-    let unwrapped = Option.getOrThrow(b);
-
-    console.log("FINAL", unwrapped);
+    let unwrapped = yield* chatAndStream;
 
     yield* terminal.display("\n");
 
     let turn = 0;
     while (unwrapped.toolCalls.length > 0) {
       yield* Console.log(`Turn ${turn}`);
-      const stream = yield* retryChat(chat, input);
-      const c = yield* stream.pipe(
-        Stream.tap((chunk) => terminal.display(chunk.text)),
-        Stream.runLast
-      );
-      unwrapped = Option.getOrThrow(c);
+      unwrapped = yield* chatAndStream;
+      yield* terminal.display("\n");
+
       turn++;
     }
   }
