@@ -1,5 +1,3 @@
-console.log("Hello via Bun!");
-
 import { AiChat } from "@effect/ai";
 import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
 import { Prompt } from "@effect/cli";
@@ -53,7 +51,8 @@ The current location is at ${cwd}.
       turn++;
     }
 
-    yield* exportChatJson(chatTimestamp, unwrapped);
+    const json = yield* chat.exportJson;
+    yield* exportChatJson(chatTimestamp, json);
   }
 });
 

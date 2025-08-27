@@ -95,8 +95,34 @@ export const RealToolkitLayer = toolkit
         edit: ({ path, old_string, new_string }) =>
           Effect.gen(function* () {
             yield* Console.log(`Edit(${path}, ${old_string}, ${new_string})`);
+
+            const confirmIntent = yield* Prompt.confirm({
+              message: `Are you sure you want to edit ${path}?`,
+            }).pipe(
+              Effect.catchAll(() => Effect.succeed("No option chosen.")),
+              Effect.provide(NodeContext.layer) // Provide Terminal dependency required for Prompt library
+            );
+            if (!confirmIntent) {
+              yield* Console.log("Edit cancelled");
+              return {
+                message: "Edit cancelled",
+              };
+            }
+
+            const editResult = yield* fs
+              .writeFileString(path, new_string)
+              .pipe(
+                Effect.catchAll(() =>
+                  Effect.succeed({ message: "Edit failed" })
+                )
+              );
+
+            if (editResult) {
+              return editResult;
+            }
+
             return {
-              message: "yeah I got it",
+              message: `Edited ${path} successfully`,
             };
           }),
         chooseOption: ({ options }) =>
