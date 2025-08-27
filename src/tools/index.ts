@@ -21,7 +21,7 @@ const StubToolkitLayer = toolkit.toLayer({
     Effect.gen(function* () {
       yield* Console.log(`Read(${path})`);
       return {
-        content: "ballsack",
+        content: "content",
       };
     }),
   edit: ({ path, old_string, new_string }) =>
@@ -40,36 +40,6 @@ export const RealToolkitLayer = toolkit
       const pathService = yield* Path.Path;
 
       return toolkit.of({
-        // list: ({ path }) =>
-        //   Effect.gen(function* () {
-        //     yield* Console.log(`List(${path})`);
-        //     const entries = yield* fs.readDirectory(path);
-        //     const files: string[] = [];
-        //     const directories: string[] = [];
-
-        //     for (const name of entries) {
-        //       const fullPath = yield* pathService.isAbsolute(name)
-        //         ? name
-        //         : pathService.join(path, name);
-        //       const stat = yield* fs.stat(fullPath);
-        //       if (stat.type === "File") {
-        //         files.push(fullPath);
-        //       } else if (stat.type === "Directory") {
-        //         directories.push(fullPath);
-        //       }
-        //     }
-        //     return {
-        //       files: files.sort(),
-        //       directories: directories.sort(),
-        //     };
-        //   }),
-
-        // .pipe(
-        //   Effect.catchAll((error) =>
-        //     Effect.succeed({ files: [], directories: [] })
-        //   )
-        // ),
-
         list: ({ path }) =>
           Effect.gen(function* () {
             yield* Console.log(`List(${path})`);
@@ -77,14 +47,14 @@ export const RealToolkitLayer = toolkit
             const files: string[] = [];
             const directories: string[] = [];
             for (const name of entries) {
-              // const fullPath = yield* pathService.isAbsolute(name)
-              //   ? name
-              //   : pathService.join(path, name);
-              const stat = yield* fs.stat(name);
+              const fullPath = pathService.isAbsolute(name)
+                ? name
+                : pathService.join(path, name);
+              const stat = yield* fs.stat(fullPath);
               if (stat.type === "File") {
-                files.push(name);
+                files.push(fullPath);
               } else if (stat.type === "Directory") {
-                directories.push(name);
+                directories.push(fullPath);
               }
             }
             return {

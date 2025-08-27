@@ -14,10 +14,13 @@ import { RealToolkitLayer } from "./src/tools/index.ts";
 import { retryChat } from "./src/util/stream.ts";
 
 const main = Effect.gen(function* () {
+  const cwd = process.cwd();
+
   const chat = yield* AiChat.fromPrompt({
     prompt: [],
     system: `You are Homunulus, a helpful assistant.
 Homunculus lives in the terminal.
+The current location is at ${cwd}.
     `,
   });
   const terminal = yield* Terminal.Terminal;
