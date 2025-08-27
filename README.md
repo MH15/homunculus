@@ -2,6 +2,9 @@
 
 Homunculus is an agentic assistant (think Claude Code, Codex, etc) written in [Effect](https://effect-ts.github.io).
 
+> [!CAUTION]
+> Homunculus is a learning project and SHOULD NOT BE USED in any environment.
+
 ## Available Tools
 
 Homunculus implements the following tools:
@@ -29,4 +32,4 @@ node --env-file=.env index.ts
 ## Credits
 
 - [Effect](https://effect-ts.github.io) - standard library.
-- [Kit Langton](https://www.youtube.com/watch?v=aueu9lm2ubo) - original inspiration.
+- [Kit Langton](https://www.youtube.com/watch?v=aueu9lm2ubo) - original inspiration, YouTube video.
