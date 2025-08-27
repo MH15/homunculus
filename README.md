@@ -3,7 +3,7 @@
 Homunculus is an agentic assistant (think Claude Code, Codex, etc) written in [Effect](https://effect-ts.github.io).
 
 > [!CAUTION]
-> Homunculus is a learning project and SHOULD NOT BE USED in any environment.
+> Homunculus is a learning project and SHOULD NOT BE USED in any environment. It'll probably delete your files and run unsafe bash commands.
 
 ## Available Tools
 
